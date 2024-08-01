@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kubernetes Practice Assistant</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="scenario-panel">
+        <h1 id="scenario-title">Scenario Title</h1>
+        <p id="scenario-description">Scenario description will appear here.</p>
+        <h2>Tasks:</h2>
+        <ol id="task-list"></ol>
+        <button id="check-button">Check Progress</button>
+        <pre id="check-output"></pre>
+      </div>
+      <div class="chat-panel">
+        <div id="chat-messages"></div>
+        <div class="chat-input">
+          <textarea
+            id="user-input"
+            placeholder="Enter your message or kubectl command output"
+          ></textarea>
+          <button id="send-button">Send</button>
+        </div>
+      </div>
+    </div>
+    <script src="/static/js/main.js" type="module"></script>
+  </body>
+</html>

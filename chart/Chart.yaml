@@ -1,0 +1,15 @@
+apiVersion: v2
+name: kpa
+description: A simple tool to practice Kubernetes commands, for both new and experienced users.
+type: application
+version: 0.1.0
+appVersion: "v0.1.0"
+keywords:
+  - kubernetes
+  - openai
+  - practice
+  - ckad
+  - cka
+maintainers:
+  - name: Robert Cronin
+    email: robert@robertcronin.com

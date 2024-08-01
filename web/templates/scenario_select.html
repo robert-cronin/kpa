@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KPA - Select Scenario</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Kubernetes Practice Assistant</h1>
+      <div id="scenario-input">
+        <h2>Generate Scenarios</h2>
+        <textarea
+          id="scenario-prompt"
+          placeholder="Describe the type of Kubernetes scenario you want to practice..."
+        ></textarea>
+        <button id="generate-scenarios">Generate Scenarios</button>
+      </div>
+      <div id="scenario-list"></div>
+    </div>
+    <script src="/static/js/scenario_select.js" type="module"></script>
+    <script>
+      // Ensure selectScenario is available in the global scope
+      window.selectScenario = function (id) {
+        window.location.href = `/scenario?id=${id}`;
+      };
+    </script>
+  </body>
+</html>

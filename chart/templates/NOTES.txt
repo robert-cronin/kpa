@@ -1,0 +1,28 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your release is named {{ .Release.Name }}.
+
+To access KubeMedic:
+
+{{- if .Values.ingress.enabled }}
+{{- range $host := .Values.ingress.hosts }}
+  {{- range .paths }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+  {{- end }}
+{{- end }}
+{{- else }}
+Run this command to access KubeMedic locally:
+
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "chart.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+
+Then open http://localhost:{{ .Values.service.port }} in your browser.
+{{- end }}
+
+IMPORTANT: Make sure you've created a secret named '{{ .Values.openai.secretName }}' with your OpenAI API key.
+If you need to update it:
+
+  kubectl create secret generic {{ .Values.openai.secretName }} \
+    --from-literal=OPENAI_API_KEY=<OPENAI_API_KEY> \
+    --dry-run=client -o yaml | kubectl apply -f -
+
+For more information, check the KubeMedic documentation.

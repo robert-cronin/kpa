@@ -1,12 +1,10 @@
 {
     "configurations": [
         {
-            "name": "Launch Package",
-            "type": "go",
+            "name": "Python Debugger: Module",
+            "type": "debugpy",
             "request": "launch",
-            "mode": "auto",
-            "program": "${workspaceFolder}"
+            "module": "app.main"
         }
-
     ]
 }

@@ -61,7 +61,7 @@ class ChatHandler:
         the user's progress and generate scenarios accordingly.
         """
         completion = client.chat.completions.create(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4o-mini-2024-07-18",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Notes: {notes}\nPrevious scenarios: {
@@ -97,7 +97,7 @@ class ChatHandler:
         """
 
         completion = client.chat.completions.create(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4o-mini-2024-07-18",
             messages=[
                 {"role": "system",
                     "content": "You are a Kubernetes expert evaluating progress on a mock scenario."},
@@ -139,7 +139,7 @@ class ChatHandler:
         prompt = f"Explain the Kubernetes concept '{concept}'."
 
         completion = client.chat.completions.create(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4o-mini-2024-07-18",
             messages=[
                 {"role": "system",
                     "content": "You are a Kubernetes expert explaining concepts."},
@@ -171,7 +171,7 @@ class ChatHandler:
         """
 
         completion = client.chat.completions.create(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4o-mini-2024-07-18",
             messages=[
                 {"role": "system",
                     "content": "You are a Kubernetes expert troubleshooting issues."},

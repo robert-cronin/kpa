@@ -1,4 +1,7 @@
 # Kubernetes Practice Assistant (KPA)
+
+![KPA](docs/kpa.png)
+
 The Kubernetes Practice Assistant (KPA) is a simple tool designed to help you prepare for Kubernetes certifications and improve your practical skills. 
 
 Key features:

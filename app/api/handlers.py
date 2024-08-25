@@ -30,6 +30,10 @@ class Handler:
             })
 
         return jsonify(stored_scenarios)
+    
+    def get_all_scenarios(self):
+        scenarios = db.get_all_scenarios()
+        return jsonify(scenarios)
 
     def handle_get_scenario(self, id):
         scenario = db.get_scenario(id)

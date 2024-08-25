@@ -179,8 +179,13 @@ def get_all_scenarios() -> List[Dict[str, Any]]:
     with get_db() as db:
         cursor = db.cursor()
         cursor.execute(
-            "SELECT id, title, description FROM scenarios ORDER BY created_at DESC")
-        return [dict(row) for row in cursor.fetchall()]
+            "SELECT id, title, description, tasks FROM scenarios ORDER BY created_at DESC")
+        scenarios = []
+        for row in cursor.fetchall():
+            scenario = dict(row)
+            scenario['tasks'] = json.loads(scenario['tasks'])
+            scenarios.append(scenario)
+        return scenarios
 
 
 def get_last_scenario_id() -> int:

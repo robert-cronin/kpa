@@ -66,7 +66,7 @@ button:hover {
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  width: calc(50% - 10px);
+  margin-bottom: 20px;
 }
 
 .scenario-option h3 {
@@ -97,4 +97,53 @@ button:hover {
 
 #feeling-lucky:hover {
   background-color: #2d9248;
+}
+
+.description-container {
+  margin-bottom: 10px;
+}
+
+.description {
+  margin-bottom: 5px;
+}
+
+.expand-btn,
+.show-tasks-btn,
+.delete-btn {
+  background-color: #6dc0ff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.expand-btn:hover,
+.show-tasks-btn:hover,
+.delete-btn:hover {
+  background-color: #48b0ff;
+}
+
+.tasks-list {
+  margin-top: 10px;
+  padding-left: 20px;
+}
+
+.hidden {
+  display: none;
+}
+
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.delete-btn {
+  background-color: #ff6b6b;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #ff4757;
 }

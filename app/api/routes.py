@@ -6,8 +6,13 @@
 from app.api.handlers import Handler
 
 
+
 def setup_routes(app, kubectl_executor, ai_chat):
     handler = Handler(kubectl_executor, ai_chat)
+    
+    @app.route('/api/scenarios', methods=['GET'])
+    def get_scenarios():
+        return handler.get_all_scenarios()
 
     @app.route('/api/scenarios/<int:id>', methods=['GET'])
     def get_scenario(id):

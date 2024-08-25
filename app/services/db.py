@@ -81,7 +81,7 @@ def store_scenario(scenario: Dict[str, Any]) -> int:
             json.dumps(scenario['tasks']),
             json.dumps(scenario['hints']),
             # Convert KubernetesScenarioSolution to dict
-            json.dumps(scenario['solution'].dict()),
+            json.dumps(scenario['solution']),
             json.dumps(scenario['verification_commands'])
         ))
         db.commit()

@@ -48,10 +48,12 @@ class ChatHandler:
             db.get_scenario(i) for i in range(max(1, last_scenario_id - 4), last_scenario_id + 1)
             if db.get_scenario(i) is not None
         ]
+        
+        num_scenarios = 1
 
         system_prompt = f"""
         You are a Kubernetes expert creating practice scenarios. Based on the user notes and previous
-        scenarios, generate 5 Kubernetes practice scenarios suitable for CKA/CKS exam preparation.
+        scenarios, generate {num_scenarios} Kubernetes practice scenarios suitable for CKA/CKS exam preparation.
         Focus on addressing perceived weaknesses and providing learning opportunities.
         """
         completion = client.beta.chat.completions.parse(
@@ -69,7 +71,7 @@ class ChatHandler:
 
         # Store the generated scenarios in the database
         for scenario in response.scenarios:
-            db.store_scenario(scenario.dict())
+            db.store_scenario(scenario.model_dump())
 
         return response
 

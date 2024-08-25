@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from openai import OpenAI
 from app.services import db
+from app.utils.logger import logger
 import json
 
 client = OpenAI()
@@ -42,6 +43,7 @@ class ChatHandler:
         self.kubectl_executor = kubectl_executor
 
     def generate_scenarios(self, prompt: str) -> ScenarioResponse:
+        logger.info("Generating scenarios")
         notes = db.get_notes()
         last_scenario_id = db.get_last_scenario_id()
         previous_scenarios = [
@@ -56,105 +58,120 @@ class ChatHandler:
         scenarios, generate {num_scenarios} Kubernetes practice scenarios suitable for CKA/CKS exam preparation.
         Focus on addressing perceived weaknesses and providing learning opportunities.
         """
-        completion = client.beta.chat.completions.parse(
-            model="gpt-4o-mini-2024-07-18",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"Notes: {notes}\nPrevious scenarios: {
-                    previous_scenarios}\nGenerate scenarios based on: {prompt}"}
-            ],
-            response_format=ScenarioResponse
-        )
-        response = completion.choices[0].message.parsed
-        
-        print(response)
+        try:
+            completion = client.beta.chat.completions.parse(
+                model="gpt-4o-mini-2024-07-18",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Notes: {notes}\nPrevious scenarios: {previous_scenarios}\nGenerate scenarios based on: {prompt}"}
+                ],
+                response_format=ScenarioResponse
+            )
+            response = completion.choices[0].message.parsed
+            logger.info("Scenarios generated successfully")
 
-        # Store the generated scenarios in the database
-        for scenario in response.scenarios:
-            db.store_scenario(scenario.model_dump())
+            # Store the generated scenarios in the database
+            for scenario in response.scenarios:
+                db.store_scenario(scenario.model_dump())
+                logger.info(f"Scenario stored: {scenario.title}")
 
-        return response
+            return response
+        except Exception as e:
+            logger.error(f"Error generating scenarios: {e}")
+            raise
 
     def evaluate_progress(self, scenario_id: int, user_commands: List[str]) -> dict:
-        scenario = db.get_scenario(scenario_id)
-        chat_history = db.get_chat_history(scenario_id)
+        logger.info(f"Evaluating progress for scenario_id: {scenario_id}")
+        try:
+            scenario = db.get_scenario(scenario_id)
+            chat_history = db.get_chat_history(scenario_id)
 
-        prompt = f"""
-        Evaluate the progress on the following Kubernetes scenario:
+            prompt = f"""
+            Evaluate the progress on the following Kubernetes scenario:
 
-        Scenario: {scenario}
+            Scenario: {scenario}
 
-        Chat history: {chat_history}
+            Chat history: {chat_history}
 
-        User commands: {user_commands}
+            User commands: {user_commands}
 
-        Provide feedback and the next hint if needed.
-        """
+            Provide feedback and the next hint if needed.
+            """
 
-        completion = client.beta.chat.completions.parse(
-            model="gpt-4o-mini-2024-07-18",
-            messages=[
-                {"role": "system",
-                    "content": "You are a Kubernetes expert evaluating progress on a mock scenario."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_schema", "schema": {
-                "type": "object",
-                "properties": {
-                    "progress": {"type": "number"},
-                    "feedback": {"type": "string"},
-                    "next_hint": {"type": "string"}
-                },
-                "required": ["progress", "feedback", "next_hint"],
-                "additionalProperties": False
-            }}
-        )
+            completion = client.beta.chat.completions.parse(
+                model="gpt-4o-mini-2024-07-18",
+                messages=[
+                    {"role": "system", "content": "You are a Kubernetes expert evaluating progress on a mock scenario."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_schema", "schema": {
+                    "type": "object",
+                    "properties": {
+                        "progress": {"type": "number"},
+                        "feedback": {"type": "string"},
+                        "next_hint": {"type": "string"}
+                    },
+                    "required": ["progress", "feedback", "next_hint"],
+                    "additionalProperties": False
+                }}
+            )
 
-        evaluation = json.loads(completion.choices[0].message.content)
+            evaluation = json.loads(completion.choices[0].message.content)
+            logger.info(f"Evaluation completed for scenario_id: {scenario_id}")
 
-        # Store the evaluation as a chat message
-        db.store_chat_message(scenario_id, "assistant", json.dumps(evaluation))
+            # Store the evaluation as a chat message
+            db.store_chat_message(scenario_id, "assistant", json.dumps(evaluation))
+            logger.info(f"Evaluation stored in chat history for scenario_id: {scenario_id}")
 
-        # Update scenario progress
-        current_progress = db.get_scenario_progress(scenario_id)
-        if current_progress:
-            completed_tasks = current_progress['completed_tasks']
-            if evaluation['progress'] > len(completed_tasks) / len(scenario['tasks']):
-                completed_tasks.append(scenario['tasks'][len(completed_tasks)])
-        else:
-            completed_tasks = [scenario['tasks'][0]
-                               ] if evaluation['progress'] > 0 else []
+            # Update scenario progress
+            current_progress = db.get_scenario_progress(scenario_id)
+            if current_progress:
+                completed_tasks = current_progress['completed_tasks']
+                if evaluation['progress'] > len(completed_tasks) / len(scenario['tasks']):
+                    completed_tasks.append(scenario['tasks'][len(completed_tasks)])
+            else:
+                completed_tasks = [scenario['tasks'][0]] if evaluation['progress'] > 0 else []
 
-        db.update_scenario_progress(
-            scenario_id, "in_progress", completed_tasks)
+            db.update_scenario_progress(scenario_id, "in_progress", completed_tasks)
+            logger.info(f"Scenario progress updated for scenario_id: {scenario_id}")
 
-        return evaluation
+            return evaluation
+        except Exception as e:
+            logger.error(f"Error evaluating progress for scenario_id {scenario_id}: {e}")
+            raise
 
     def explain_concept(self, concept: str) -> dict:
+        logger.info(f"Explaining concept: {concept}")
         prompt = f"Explain the Kubernetes concept '{concept}'."
 
-        completion = client.beta.chat.completions.parse(
-            model="gpt-4o-mini-2024-07-18",
-            messages=[
-                {"role": "system",
-                    "content": "You are a Kubernetes expert explaining concepts."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_schema", "schema": {
-                "type": "object",
-                "properties": {
-                    "explanation": {"type": "string"},
-                    "examples": {"type": "array", "items": {"type": "string"}},
-                    "related_concepts": {"type": "array", "items": {"type": "string"}}
-                },
-                "required": ["explanation", "examples", "related_concepts"],
-                "additionalProperties": False
-            }}
-        )
+        try:
+            completion = client.beta.chat.completions.parse(
+                model="gpt-4o-mini-2024-07-18",
+                messages=[
+                    {"role": "system", "content": "You are a Kubernetes expert explaining concepts."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_schema", "schema": {
+                    "type": "object",
+                    "properties": {
+                        "explanation": {"type": "string"},
+                        "examples": {"type": "array", "items": {"type": "string"}},
+                        "related_concepts": {"type": "array", "items": {"type": "string"}}
+                    },
+                    "required": ["explanation", "examples", "related_concepts"],
+                    "additionalProperties": False
+                }}
+            )
 
-        return json.loads(completion.choices[0].message.content)
+            explanation = json.loads(completion.choices[0].message.content)
+            logger.info(f"Concept explained: {concept}")
+            return explanation
+        except Exception as e:
+            logger.error(f"Error explaining concept {concept}: {e}")
+            raise
 
     def troubleshoot_issue(self, problem_description: str, user_commands: List[str], system_output: str) -> dict:
+        logger.info(f"Troubleshooting issue: {problem_description}")
         prompt = f"""
         Troubleshoot the following Kubernetes issue:
 
@@ -165,23 +182,28 @@ class ChatHandler:
         Provide possible causes, suggested actions, and an explanation.
         """
 
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini-2024-07-18",
-            messages=[
-                {"role": "system",
-                    "content": "You are a Kubernetes expert troubleshooting issues."},
-                {"role": "user", "content": prompt}
-            ],
-            response_format={"type": "json_schema", "schema": {
-                "type": "object",
-                "properties": {
-                    "possible_causes": {"type": "array", "items": {"type": "string"}},
-                    "suggested_actions": {"type": "array", "items": {"type": "string"}},
-                    "explanation": {"type": "string"}
-                },
-                "required": ["possible_causes", "suggested_actions", "explanation"],
-                "additionalProperties": False
-            }}
-        )
+        try:
+            completion = client.chat.completions.create(
+                model="gpt-4o-mini-2024-07-18",
+                messages=[
+                    {"role": "system", "content": "You are a Kubernetes expert troubleshooting issues."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_schema", "schema": {
+                    "type": "object",
+                    "properties": {
+                        "possible_causes": {"type": "array", "items": {"type": "string"}},
+                        "suggested_actions": {"type": "array", "items": {"type": "string"}},
+                        "explanation": {"type": "string"}
+                    },
+                    "required": ["possible_causes", "suggested_actions", "explanation"],
+                    "additionalProperties": False
+                }}
+            )
 
-        return json.loads(completion.choices[0].message.content)
+            troubleshooting = json.loads(completion.choices[0].message.content)
+            logger.info(f"Issue troubleshooted: {problem_description}")
+            return troubleshooting
+        except Exception as e:
+            logger.error(f"Error troubleshooting issue {problem_description}: {e}")
+            raise

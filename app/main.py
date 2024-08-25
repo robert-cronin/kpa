@@ -9,6 +9,7 @@ from app.services.db import init_db
 from app.services.ai import ChatHandler
 from app.services.kubectl import Executor
 from app.utils.logger import logger
+from app.websocket import init_socketio
 import os
 
 
@@ -34,6 +35,11 @@ def create_app():
     setup_routes(app, kubectl_executor, ai_chat)
     logger.info("Routes set up successfully")
 
+    # Initialize SocketIO
+    logger.info("Initializing SocketIO")
+    init_socketio(app)
+    logger.info("SocketIO initialized successfully")
+
     @app.route('/')
     def scenario_select():
         logger.info("Rendering scenario_select.html")
@@ -50,5 +56,6 @@ def create_app():
 if __name__ == '__main__':
     logger.info("Starting application")
     app = create_app()
-    app.run(debug=True, port=8080)
+    from app.websocket import socketio
+    socketio.run(app, debug=True, port=8080)
     logger.info("Application started successfully")

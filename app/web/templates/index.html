@@ -5,28 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kubernetes Practice Assistant</title>
     <link rel="stylesheet" href="/static/css/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css"
+    />
   </head>
   <body>
     <div class="container">
-      <div class="scenario-panel">
-        <h1 id="scenario-title">Scenario Title</h1>
-        <p id="scenario-description">Scenario description will appear here.</p>
-        <h2>Tasks:</h2>
-        <ol id="task-list"></ol>
-        <button id="check-button">Check Progress</button>
-        <pre id="check-output"></pre>
-      </div>
-      <div class="chat-panel">
-        <div id="chat-messages"></div>
-        <div class="chat-input">
-          <textarea
-            id="user-input"
-            placeholder="Enter your message or kubectl command output"
-          ></textarea>
-          <button id="send-button">Send</button>
+      <h1 id="scenario-title">Scenario Title</h1>
+      <div class="main-content">
+        <div class="left-panel">
+          <div id="terminal"></div>
+        </div>
+        <div class="right-panel">
+          <div class="scenario-details">
+            <h2>Description:</h2>
+            <p id="scenario-description">
+              Scenario description will appear here.
+            </p>
+            <h2>Tasks:</h2>
+            <ol id="task-list"></ol>
+            <button id="check-button">Check Progress</button>
+            <pre id="check-output"></pre>
+          </div>
+          <div class="chat-panel">
+            <div id="chat-messages"></div>
+            <div class="chat-input">
+              <textarea
+                id="user-input"
+                placeholder="Ask for help or clarification"
+              ></textarea>
+              <button id="send-button">Send</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <script src="/static/js/main.js" type="module"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
+    <script src="/static/js/main.js"></script>
   </body>
 </html>

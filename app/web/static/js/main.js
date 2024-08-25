@@ -14,6 +14,66 @@ document.addEventListener("DOMContentLoaded", async () => {
   const sendButton = document.getElementById("send-button");
 
   let currentScenarioId = null;
+  let term = null;
+  let socket = null;
+
+  function initializeTerminal() {
+    const terminalElement = document.getElementById("terminal");
+    term = new Terminal({
+      cursorBlink: true,
+      fontSize: 14,
+      fontFamily: 'Consolas, "Courier New", monospace',
+      theme: {
+        background: "#1e1e1e",
+      },
+    });
+    term.open(terminalElement);
+
+    function fitTerminal() {
+      const CHAR_WIDTH = 9;
+      const CHAR_HEIGHT = 17;
+
+      const cols = Math.floor(terminalElement.clientWidth / CHAR_WIDTH);
+      const rows = Math.floor(terminalElement.clientHeight / CHAR_HEIGHT);
+
+      term.resize(cols, rows);
+    }
+
+    fitTerminal();
+    window.addEventListener("resize", fitTerminal);
+
+    socket = io();
+
+    socket.on("connect", () => {
+      term.write("\r\n*** Connected to server ***\r\n");
+      term.write("$ ");
+    });
+
+    socket.on("output", (data) => {
+      term.write(data);
+      term.write("\r\n$ ");
+    });
+
+    let currentLine = "";
+    term.onKey(({ key, domEvent }) => {
+      const printable =
+        !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
+
+      if (domEvent.keyCode === 13) {
+        socket.emit("input", currentLine);
+        currentLine = "";
+        term.write("\r\n");
+      } else if (domEvent.keyCode === 8) {
+        if (currentLine.length > 0) {
+          currentLine = currentLine.slice(0, -1);
+          term.write("\b \b");
+        }
+      } else if (printable) {
+        currentLine += key;
+        term.write(key);
+      }
+    });
+  }
 
   function loadScenario() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -30,7 +90,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         .then((scenario) => {
           console.log("Scenario loaded:", scenario);
           currentScenarioId = scenario.id;
-          scenarioTitle.textContent = scenario.name;
+          scenarioTitle.textContent = scenario.title;
           scenarioDescription.textContent = scenario.description;
           taskList.innerHTML = scenario.tasks
             .map((task) => `<li>${task}</li>`)
@@ -77,10 +137,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
-          return response.text();
+          return response.json();
         })
-        .then((aiResponse) => {
-          addMessage("ai", aiResponse);
+        .then((data) => {
+          addMessage("ai", data.response);
         })
         .catch((error) => {
           console.error("Error sending message:", error);
@@ -98,10 +158,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return response.text();
+        return response.json();
       })
-      .then((output) => {
-        checkOutput.textContent = output;
+      .then((data) => {
+        checkOutput.textContent = data.message;
       })
       .catch((error) => {
         console.error("Error validating scenario:", error);
@@ -120,6 +180,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   loadScenario();
+  initializeTerminal();
 });
 
 console.log("main.js loaded");

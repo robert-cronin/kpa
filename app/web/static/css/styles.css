@@ -14,9 +14,11 @@ html {
 }
 
 .container {
-  max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
 }
 
 h1 {
@@ -146,4 +148,118 @@ button:hover {
 
 .delete-btn:hover {
   background-color: #ff4757;
+}
+
+.main-content {
+  display: flex;
+  flex-grow: 1;
+  gap: 20px;
+  overflow: hidden;
+}
+
+.left-panel,
+.right-panel {
+  flex: 1;
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+#terminal {
+  flex-grow: 1;
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.scenario-details {
+  margin-bottom: 20px;
+}
+
+#task-list {
+  padding-left: 20px;
+}
+
+#check-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#check-button:hover {
+  background-color: #2980b9;
+}
+
+#check-output {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f1f1f1;
+  border-radius: 4px;
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 300px;
+}
+
+#chat-messages {
+  flex-grow: 1;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.chat-input {
+  display: flex;
+}
+
+#user-input {
+  flex-grow: 1;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+#send-button {
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-left: 10px;
+}
+
+#send-button:hover {
+  background-color: #27ae60;
+}
+
+.message {
+  margin-bottom: 10px;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.user-message {
+  background-color: #e8f5e9;
+  align-self: flex-end;
+}
+
+.ai-message {
+  background-color: #e3f2fd;
+  align-self: flex-start;
 }

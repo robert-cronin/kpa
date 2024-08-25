@@ -21,6 +21,7 @@ Kubernetes certifications are heavily focused on practical skills, and the best 
 The KPA project is currently in the early stages of development. The following features are planned for future releases:
 - [x] Have GPT4o mini create a few scenarios to choose from based on a simple initial prompt
 - [x] Store scenarios in a sqlite database
+- [x] Add terminal to scenario page and have it connect to backend via ws
 - [ ] Simple interface with the chosen scenario created on the left and a chat window on the right
     - [ ] The left pane will house the task description as well as a "Check" button
 - [ ] Ability to have GPT4o mini provide hints and guidance based on user input

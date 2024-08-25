@@ -15,19 +15,18 @@ class Handler:
 
     def handle_generate_scenarios(self):
         data = request.json
-        prompt = data.get('prompt')
+        prompt = data.get('prompt', '')
 
         generated_scenarios = self.ai_chat.generate_scenarios(prompt)
         stored_scenarios = []
 
-        for scenario in generated_scenarios:
-            id = db.store_scenario(scenario)
+        for scenario in generated_scenarios.scenarios:
+            scenario_dict = scenario.dict()
+            id = db.store_scenario(scenario_dict)
             stored_scenarios.append({
                 'id': id,
-                'name': scenario['name'],
-                'description': scenario['description'],
-                'tasks': scenario['tasks'],
-                'validation': scenario['validation']
+                'title': scenario_dict['title'],
+                'description': scenario_dict['description']
             })
 
         return jsonify(stored_scenarios)

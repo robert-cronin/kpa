@@ -12,19 +12,10 @@ import json
 client = OpenAI()
 
 
-class Step(BaseModel):
+# A dictionary containing 'commands' (list of strings) and 'explanation' (string)"
+class KubernetesScenarioSolution(BaseModel):
     explanation: str
-    output: str
-
-
-class MathReasoning(BaseModel):
-    steps: List[Step]
-    final_answer: str
-
-
-class Participant(BaseModel):
-    name: str
-    role: str
+    commands: List[str]
 
 
 class KubernetesScenario(BaseModel):
@@ -33,14 +24,16 @@ class KubernetesScenario(BaseModel):
     setup_commands: List[str]
     tasks: List[str]
     hints: List[str]
-    solution: dict = Field(
-        ..., description="A dictionary containing 'commands' (list of strings) and 'explanation' (string)")
+    solution: KubernetesScenarioSolution
     verification_commands: List[str]
 
 
+class ScenarioReflection(BaseModel):
+    perceived_weaknesses: List[str]
+    learning_opportunities: List[str]
+
+
 class ScenarioResponse(BaseModel):
-    reflections: dict = Field(
-        ..., description="A dictionary containing 'perceived_weaknesses' and 'learning_opportunities' (both lists of strings)")
     scenarios: List[KubernetesScenario]
 
 
@@ -50,29 +43,29 @@ class ChatHandler:
 
     def generate_scenarios(self, prompt: str) -> ScenarioResponse:
         notes = db.get_notes()
-        # Fetch only the most recent scenarios for context
-        previous_scenarios = [db.get_scenario(i) for i in range(
-            max(1, db.get_last_scenario_id() - 4), db.get_last_scenario_id() + 1)]
+        last_scenario_id = db.get_last_scenario_id()
+        previous_scenarios = [
+            db.get_scenario(i) for i in range(max(1, last_scenario_id - 4), last_scenario_id + 1)
+            if db.get_scenario(i) is not None
+        ]
 
         system_prompt = f"""
         You are a Kubernetes expert creating practice scenarios. Based on the user notes and previous
         scenarios, generate 5 Kubernetes practice scenarios suitable for CKA/CKS exam preparation.
-        Focus on addressing perceived weaknesses and providing learning opportunities. Reflect on
-        the user's progress and generate scenarios accordingly.
+        Focus on addressing perceived weaknesses and providing learning opportunities.
         """
-        completion = client.chat.completions.create(
+        completion = client.beta.chat.completions.parse(
             model="gpt-4o-mini-2024-07-18",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Notes: {notes}\nPrevious scenarios: {
                     previous_scenarios}\nGenerate scenarios based on: {prompt}"}
             ],
-            response_format={"type": "json_schema",
-                             "schema": ScenarioResponse.model_json_schema()}
+            response_format=ScenarioResponse
         )
-
-        response = ScenarioResponse.model_validate_json(
-            completion.choices[0].message.content)
+        response = completion.choices[0].message.parsed
+        
+        print(response)
 
         # Store the generated scenarios in the database
         for scenario in response.scenarios:
@@ -96,7 +89,7 @@ class ChatHandler:
         Provide feedback and the next hint if needed.
         """
 
-        completion = client.chat.completions.create(
+        completion = client.beta.chat.completions.parse(
             model="gpt-4o-mini-2024-07-18",
             messages=[
                 {"role": "system",
@@ -138,7 +131,7 @@ class ChatHandler:
     def explain_concept(self, concept: str) -> dict:
         prompt = f"Explain the Kubernetes concept '{concept}'."
 
-        completion = client.chat.completions.create(
+        completion = client.beta.chat.completions.parse(
             model="gpt-4o-mini-2024-07-18",
             messages=[
                 {"role": "system",

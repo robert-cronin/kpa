@@ -80,7 +80,8 @@ def store_scenario(scenario: Dict[str, Any]) -> int:
             json.dumps(scenario['setup_commands']),
             json.dumps(scenario['tasks']),
             json.dumps(scenario['hints']),
-            json.dumps(scenario['solution']),
+            # Convert KubernetesScenarioSolution to dict
+            json.dumps(scenario['solution'].dict()),
             json.dumps(scenario['verification_commands'])
         ))
         db.commit()
@@ -94,12 +95,11 @@ def get_scenario(scenario_id: int) -> Dict[str, Any]:
         row = cursor.fetchone()
         if row:
             scenario = dict(row)
-            scenario['setup_commands'] = json.loads(scenario['setup_commands'])
-            scenario['tasks'] = json.loads(scenario['tasks'])
-            scenario['hints'] = json.loads(scenario['hints'])
-            scenario['solution'] = json.loads(scenario['solution'])
-            scenario['verification_commands'] = json.loads(
-                scenario['verification_commands'])
+            for field in ['setup_commands', 'tasks', 'hints', 'solution', 'verification_commands']:
+                if field in scenario and scenario[field]:
+                    scenario[field] = json.loads(scenario[field])
+                else:
+                    scenario[field] = []
             return scenario
     return None
 

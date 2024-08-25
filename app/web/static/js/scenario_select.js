@@ -6,42 +6,50 @@
 document.addEventListener("DOMContentLoaded", () => {
   const scenarioPrompt = document.getElementById("scenario-prompt");
   const generateButton = document.getElementById("generate-scenarios");
+  const feelingLuckyButton = document.getElementById("feeling-lucky");
   const scenarioList = document.getElementById("scenario-list");
 
-  generateButton.addEventListener("click", async () => {
-    const prompt = scenarioPrompt.value;
-    try {
-      const response = await fetch("/api/generate-scenarios", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
+  function generateScenarios(prompt = "") {
+    fetch("/api/generate-scenarios", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((scenarios) => {
+        scenarioList.innerHTML = scenarios
+          .map(
+            (scenario, index) => `
+            <div class="scenario-option">
+              <h3>Scenario ${index + 1}: ${scenario.title}</h3>
+              <p>${scenario.description}</p>
+              <button onclick="selectScenario(${scenario.id})">Select</button>
+            </div>
+          `
+          )
+          .join("");
+      })
+      .catch((error) => {
+        console.error("Error generating scenarios:", error);
+        scenarioList.innerHTML =
+          "<p>Error generating scenarios. Please try again.</p>";
       });
+  }
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+  generateButton.addEventListener("click", () => {
+    generateScenarios(scenarioPrompt.value);
+  });
 
-      const scenarios = await response.json();
-
-      // Generate HTML for all scenario cards
-      scenarioList.innerHTML = scenarios
-        .map(
-          (scenario, index) => `
-          <div class="scenario-option">
-            <h3>Scenario ${index + 1}</h3>
-            <p>${scenario.description}</p>
-            <button onclick="selectScenario(${scenario.id})">Select</button>
-          </div>
-        `
-        )
-        .join("");
-    } catch (error) {
-      console.error("Error generating scenarios:", error);
-      scenarioList.innerHTML =
-        "<p>Error generating scenarios. Please try again.</p>";
-    }
+  feelingLuckyButton.addEventListener("click", () => {
+    scenarioPrompt.value = "";
+    generateScenarios();
   });
 });
 

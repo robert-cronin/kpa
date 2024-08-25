@@ -22,9 +22,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     term = new Terminal({
       cursorBlink: true,
       fontSize: 14,
-      fontFamily: 'Consolas, "Courier New", monospace',
+      fontFamily: 'Menlo, Monaco, "Courier New", monospace',
       theme: {
-        background: "#1e1e1e",
+        background: "#282a36",
+        foreground: "#f8f8f2",
+        cursor: "#f8f8f2",
+        selection: "rgba(248,248,242,0.3)",
+        black: "#000000",
+        red: "#ff5555",
+        green: "#50fa7b",
+        yellow: "#f1fa8c",
+        blue: "#bd93f9",
+        magenta: "#ff79c6",
+        cyan: "#8be9fd",
+        white: "#bfbfbf",
+        brightBlack: "#4d4d4d",
+        brightRed: "#ff6e67",
+        brightGreen: "#5af78e",
+        brightYellow: "#f4f99d",
+        brightBlue: "#caa9fa",
+        brightMagenta: "#ff92d0",
+        brightCyan: "#9aedfe",
+        brightWhite: "#e6e6e6",
       },
     });
     term.open(terminalElement);
@@ -45,13 +64,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     socket = io();
 
     socket.on("connect", () => {
-      term.write("\r\n*** Connected to server ***\r\n");
-      term.write("$ ");
+      term.write(
+        "\r\n\x1b[1;32m➜ \x1b[1;36mKubernetes Practice Assistant\x1b[0m\r\n"
+      );
+      writePrompt();
     });
 
     socket.on("output", (data) => {
-      term.write(data);
-      term.write("\r\n$ ");
+      // Improve output formatting
+      const formattedOutput = formatOutput(data);
+      term.write(formattedOutput);
+      writePrompt();
+    });
+
+    // Update the socket.on('output') handler
+    socket.on("output", (data) => {
+      const formattedOutput = formatOutput(data);
+      term.write(formattedOutput);
+      writePrompt();
     });
 
     let currentLine = "";
@@ -59,11 +89,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       const printable =
         !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
 
-      if (domEvent.keyCode === 13) {
-        socket.emit("input", currentLine);
+      if (domEvent.ctrlKey && key === "c") {
+        // Handle Ctrl+C
+        term.write("^C");
         currentLine = "";
         term.write("\r\n");
+        writePrompt();
+      } else if (domEvent.keyCode === 13) {
+        // Handle Enter key
+        term.write("\r\n");
+        if (currentLine.trim()) {
+          socket.emit("input", currentLine);
+        } else {
+          writePrompt();
+        }
+        currentLine = "";
       } else if (domEvent.keyCode === 8) {
+        // Handle Backspace key
         if (currentLine.length > 0) {
           currentLine = currentLine.slice(0, -1);
           term.write("\b \b");
@@ -73,6 +115,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         term.write(key);
       }
     });
+  }
+
+  function writePrompt() {
+    const username = "user";
+    const hostname = "kpa";
+    const currentDir = "~/kubernetes";
+    const gitBranch = "main";
+    term.write(
+      `\r\n\x1b[1;32m➜ \x1b[1;36m${username}@${hostname}\x1b[0m:\x1b[1;34m${currentDir}\x1b[0m \x1b[1;33m(${gitBranch})\x1b[0m `
+    );
   }
 
   function loadScenario() {
@@ -110,6 +162,48 @@ document.addEventListener("DOMContentLoaded", async () => {
       scenarioDescription.textContent =
         "Please select a scenario from the home page.";
     }
+  }
+  function formatOutput(outputData) {
+    try {
+      const data = JSON.parse(outputData);
+
+      switch (data.type) {
+        case "ls":
+          return formatLsOutput(data.content);
+        case "error":
+          // Red for errors
+          return `\x1b[1;31m${data.content}\x1b[0m`;
+        case "text":
+          return data.content;
+        default:
+          // Fallback to raw output if parsing fails
+          return outputData;
+      }
+    } catch (e) {
+      console.error("Error parsing output:", e);
+      // Fallback to raw output if parsing fails
+      return outputData;
+    }
+  }
+
+  function formatLsOutput(files) {
+    const columns = 4; // Number of columns for ls output
+    const formattedFiles = files.map((file) => {
+      if (file.endsWith("/")) {
+        // Blue for directories
+        return `\x1b[1;34m${file.padEnd(20)}\x1b[0m`;
+      } else if (file.match(/\.(exe|sh|bat)$/)) {
+        // Green for executables
+        return `\x1b[1;32m${file.padEnd(20)}\x1b[0m`;
+      }
+      return file.padEnd(20);
+    });
+
+    let output = "";
+    for (let i = 0; i < formattedFiles.length; i += columns) {
+      output += formattedFiles.slice(i, i + columns).join("") + "\r\n";
+    }
+    return output;
   }
 
   function addMessage(sender, content) {

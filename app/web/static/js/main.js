@@ -84,49 +84,89 @@ document.addEventListener("DOMContentLoaded", async () => {
       writePrompt();
     });
 
-    let currentLine = "";
-    term.onKey(({ key, domEvent }) => {
-      const printable =
-        !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
 
-      if (domEvent.ctrlKey && key === "c") {
-        // Handle Ctrl+C
-        term.write("^C");
-        currentLine = "";
-        term.write("\r\n");
-        writePrompt();
-      } else if (domEvent.keyCode === 13) {
-        // Handle Enter key
+
+    let currentLine = "";
+    let commandHistory = [];
+    let historyIndex = -1;
+
+    term.onKey(({ key, domEvent }) => {
+      const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
+
+      if (domEvent.keyCode === 13) { // Enter key
         term.write("\r\n");
         if (currentLine.trim()) {
-          socket.emit("input", currentLine);
-        } else {
-          writePrompt();
+          processCommand(currentLine);
+          commandHistory.push(currentLine);
+          historyIndex = commandHistory.length;
         }
         currentLine = "";
-      } else if (domEvent.keyCode === 8) {
-        // Handle Backspace key
+      } else if (domEvent.keyCode === 8) { // Backspace
         if (currentLine.length > 0) {
           currentLine = currentLine.slice(0, -1);
           term.write("\b \b");
+        }
+      } else if (domEvent.keyCode === 38) { // Up arrow
+        if (historyIndex > 0) {
+          historyIndex--;
+          currentLine = commandHistory[historyIndex];
+          term.write('\r\x1B[K' + getPrompt() + currentLine);
+        }
+      } else if (domEvent.keyCode === 40) { // Down arrow
+        if (historyIndex < commandHistory.length - 1) {
+          historyIndex++;
+          currentLine = commandHistory[historyIndex];
+          term.write('\r\x1B[K' + getPrompt() + currentLine);
+        } else if (historyIndex === commandHistory.length - 1) {
+          historyIndex = commandHistory.length;
+          currentLine = '';
+          term.write('\r\x1B[K' + getPrompt());
         }
       } else if (printable) {
         currentLine += key;
         term.write(key);
       }
     });
+
+    function processCommand(command) {
+      if (command.trim() === 'clear') {
+        term.clear();
+      } else if (command.startsWith('k ') || command.startsWith('kubectl ')) {
+        // Handle kubectl commands
+        const kubectlCommand = command.replace(/^k /, 'kubectl ');
+        socket.emit("input", kubectlCommand);
+      } else {
+        socket.emit("input", command);
+      }
+    }
+
+    socket.on("output", (data) => {
+      const formattedOutput = formatOutput(data);
+      term.writeln(formattedOutput);
+      writePrompt();
+    });
+
+    function writePrompt() {
+      term.write(getPrompt());
+    }
+
+    function getPrompt() {
+      return "\r\n\x1B[1;32m➜\x1B[0m \x1B[1;34m~/kubernetes\x1B[0m \x1B[1;36m(main)\x1B[0m $ ";
+    }
+
+    writePrompt();
   }
 
-  function writePrompt() {
-    const username = "user";
-    const hostname = "kpa";
-    const currentDir = "~/kubernetes";
-    const gitBranch = "main";
-    term.write(
-      `\r\n\x1b[1;32m➜ \x1b[1;36m${username}@${hostname}\x1b[0m:\x1b[1;34m${currentDir}\x1b[0m \x1b[1;33m(${gitBranch})\x1b[0m `
-    );
-  }
-
+  // function writePrompt() {
+  //   const username = "user";
+  //   const hostname = "kpa";
+  //   const currentDir = "~/kubernetes";
+  //   const gitBranch = "main";
+  //   term.write(
+  //     `\r\n\x1b[1;32m➜ \x1b[1;36m${username}@${hostname}\x1b[0m:\x1b[1;34m${currentDir}\x1b[0m \x1b[1;33m(${gitBranch})\x1b[0m `
+  //   );
+  // }
+  //
   function loadScenario() {
     const urlParams = new URLSearchParams(window.location.search);
     const scenarioId = urlParams.get("id");
@@ -163,38 +203,36 @@ document.addEventListener("DOMContentLoaded", async () => {
         "Please select a scenario from the home page.";
     }
   }
+
+
   function formatOutput(outputData) {
     try {
       const data = JSON.parse(outputData);
-
       switch (data.type) {
         case "ls":
           return formatLsOutput(data.content);
         case "error":
-          // Red for errors
-          return `\x1b[1;31m${data.content}\x1b[0m`;
+          return `\x1B[1;31m${data.content}\x1B[0m`;
         case "text":
           return data.content;
         default:
-          // Fallback to raw output if parsing fails
           return outputData;
       }
     } catch (e) {
       console.error("Error parsing output:", e);
-      // Fallback to raw output if parsing fails
       return outputData;
     }
   }
 
   function formatLsOutput(files) {
     const columns = 4; // Number of columns for ls output
-    const formattedFiles = files.map((file) => {
+    const formattedFiles = files.map(file => {
       if (file.endsWith("/")) {
         // Blue for directories
-        return `\x1b[1;34m${file.padEnd(20)}\x1b[0m`;
+        return `\x1B[1;34m${file.padEnd(20)}\x1B[0m`;
       } else if (file.match(/\.(exe|sh|bat)$/)) {
         // Green for executables
-        return `\x1b[1;32m${file.padEnd(20)}\x1b[0m`;
+        return `\x1B[1;32m${file.padEnd(20)}\x1B[0m`;
       }
       return file.padEnd(20);
     });
